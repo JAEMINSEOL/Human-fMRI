@@ -1,5 +1,310 @@
 %% 
+filename = filename(1:11);
+Root = ['Y:\EPhysRawData\fmri_oppa_analysis\' filename(1:end-1) '\'];
 
+%% add epoch specific info in frame_num matrix
+decision_object_string='1st decision';
+decision_place_string='2nd decision';
+decision_navigate_string='acc_OCPR';
+decision_anyway='causeevent decision';
+decision_timeout = '3rd period';
+decision_timeout2 = '2nd period';
+
+ts = 0;
+for i=1:1:no_trials/2
+    frame_num.ocpr_num(i,17)=line_indice_adj_timeframe(frame_num.ocpr_num(i,4));
+    frame_num.ocpr_num(i,19)=line_indice_adj_timeframe(frame_num.ocpr_num(i,5));
+    frame_num.ocpr_num(i,30)=str2num(log_data{line_indice_adj_timeframe(frame_num.ocpr_num(i,1))}(2:8));
+    frame_num.ocpr_num(i,31)=str2num(log_data{line_indice_adj_timeframe(frame_num.ocpr_num(i,4))}(2:8));
+    frame_num.ocpr_num(i,32)=str2num(log_data{line_indice_adj_timeframe(frame_num.ocpr_num(i,5))}(2:8));
+    
+    for j=line_indice_ocpr(1,i):1:line_indice_ocpr(2,i)
+        f1=strfind(log_data{j},decision_object_string);
+        f2=strfind(log_data{j},decision_place_string);
+        f3=strfind(log_data{j},decision_navigate_string);
+        f0=strfind(log_data{j},decision_anyway);
+        fx=strfind(log_data{j},decision_timeout);
+        fy=strfind(log_data{j},decision_timeout2);
+        
+        if ts~=1
+            if ~isempty(f1) || ~isempty(fy)
+                j1=j;
+                while isempty(str2num(log_data{j1}(strfind(log_data{j1},'Y=')+2:strfind(log_data{j1},'Z')-1)))
+                    j1=j1-1;
+                end
+                
+                frame_num.ocpr_num(i,8)=str2num(log_data{j1}(2:8));%timestamp at 1st decision
+                for k=j1-12:1:j1+12
+                    f4=strfind(log_data{k},'causeevent timeframe');
+                    if ~isempty(f4)
+                        
+                        if ~isempty(find(line_indice_adj_timeframe==k))
+                            frame_num.ocpr_num(i,7)=find(line_indice_adj_timeframe==k); %timeframe closest to 1st decision
+                        end
+                        break
+                    end
+                end
+                ts=1;
+            end
+        end
+        
+        if ts==1
+            if  ~isempty(f2) || ~isempty(f0) ||~isempty(fx)
+                j1=j;
+                while isempty(str2num(log_data{j1}(strfind(log_data{j1},'Y=')+2:strfind(log_data{j1},'Z')-1)))
+                    j1=j1-1;
+                end
+                
+                frame_num.ocpr_num(i,18)=j1;
+                frame_num.ocpr_num(i,9)=str2num(log_data{j1}(strfind(log_data{j1},'Y=')+2:strfind(log_data{j1},'Z')-1));
+                frame_num.ocpr_num(i,12)=str2num(log_data{j1}(2:8));%timestamp at 2nd decision
+                for k=j1-12:1:j1+12
+                    f4=strfind(log_data{k},'causeevent timeframe');
+                    if ~isempty(f4)
+                        if ~isempty(find(line_indice_adj_timeframe==k))
+                            frame_num.ocpr_num(i,11)=find(line_indice_adj_timeframe==k);%timeframe closest to 2nd decision
+                        end
+                        break
+                    end
+                end
+                ts=2;
+            end
+        end
+    end
+end
+
+
+
+for i=1:1:no_trials/2
+    
+    for j=line_indice_ocpr(1,i):1:min(line_indice_ocpr(2,i)+20, line_end)
+        
+        f3=strfind(log_data{j},decision_navigate_string);
+        if ~isempty(f3)
+            frame_num.ocpr_num(i,20)=j;
+            frame_num.ocpr_num(i,16)=str2num(log_data{j}(2:8));%timestamp at 3rd decision
+            f4=strfind(log_data{j},'correct');
+            
+            
+            for l=j:1:min(j+20, line_end)
+                
+                f5=strfind(log_data{l},'choice');
+                if ~isempty(f5)
+                    frame_num.ocpr_num(i,14)=str2num(log_data{l-1}(1,end-1:end)); %answer
+                    frame_num.ocpr_num(i,15)=str2num(log_data{l}(1,end-1:end)); %choice
+                end
+            end
+            
+            %period 2 accuracy
+            switch frame_num.ocpr_num(i,14)
+                case 3
+                    range1=16000;range2=16000;
+                case 6
+                    range1=32000;range2=32000;
+                case 9
+                    range1=49000;range2=49000;
+                case 12
+                    range1=1 ;range2=65536;
+                otherwise
+                    a=1;
+            end
+            
+            if ~isnan(frame_num.ocpr_num(i,9))
+                if abs(frame_num.ocpr_num(i,9)-range1)<=6000 | abs(frame_num.ocpr_num(i,9)- range2)<=6000
+                    frame_num.ocpr_num(i,10)=1;
+                else
+                    frame_num.ocpr_num(i,10)=0;
+                end
+            end
+            
+            %period 3 accuracy
+            switch frame_num.ocpr_num(i,15)
+                case 3
+                    range1=16000;range2=16000;
+                case 6
+                    range1=32000;range2=32000;
+                case 9
+                    range1=49000;range2=49000;
+                case 12
+                    range1=1 ;range2=65536;
+                otherwise
+                    a=1;
+            end
+            
+            
+            if ~isnan(frame_num.ocpr_num(i,9))
+                if abs(frame_num.ocpr_num(i,9)-range1)<=6000 | abs(frame_num.ocpr_num(i,9)- range2)<=6000
+                    frame_num.ocpr_num(i,13)=1;
+                else
+                    frame_num.ocpr_num(i,13)=0;
+                end
+            end
+            
+        end
+        
+        
+    end
+end
+
+
+%add epoch specific info in frame_num matrix
+decision_object_string='1st decision';
+decision_place_string='2nd decision';
+decision_navigate_string='acc_control';
+decision_anyway='causeevent decision';
+decision_timeout = '3rd period';
+decision_timeout2 = '2nd period';
+
+ts=0;
+for i=1:1:no_trials/2
+    frame_num.control_num(i,17)=line_indice_adj_timeframe(frame_num.control_num(i,4));
+    frame_num.control_num(i,19)=line_indice_adj_timeframe(frame_num.control_num(i,5));
+    frame_num.control_num(i,30)=str2num(log_data{line_indice_adj_timeframe(frame_num.control_num(i,1))}(2:8));
+    frame_num.control_num(i,31)=str2num(log_data{line_indice_adj_timeframe(frame_num.control_num(i,4))}(2:8));
+    frame_num.control_num(i,32)=str2num(log_data{line_indice_adj_timeframe(frame_num.control_num(i,5))}(2:8));
+    for j=line_indice_control(1,i):1:line_indice_control(2,i)
+        f1=strfind(log_data{j},decision_object_string);
+        f2=strfind(log_data{j},decision_place_string);
+        f3=strfind(log_data{j},decision_navigate_string);
+        f0=strfind(log_data{j},decision_anyway);
+        fx=strfind(log_data{j},decision_timeout);
+        fy=strfind(log_data{j},decision_timeout2);
+        
+        
+        if ts~=1
+            if ~isempty(f1) || ~isempty(fy)
+                j1=j;
+                while isempty(str2num(log_data{j1}(strfind(log_data{j1},'Y=')+2:strfind(log_data{j1},'Z')-1)))
+                    j1=j1-1;
+                end
+                
+                frame_num.control_num(i,8)=str2num(log_data{j1}(2:8));%timestamp at 1st decision
+                for k=j1-12:1:j1+12
+                    f4=strfind(log_data{k},'causeevent timeframe');
+                    if ~isempty(f4)
+                        
+                        if ~isempty(find(line_indice_adj_timeframe==k))
+                            frame_num.control_num(i,7)=find(line_indice_adj_timeframe==k); %timeframe closest to 1st decision
+                        end
+                        break
+                    end
+                end
+                ts=1;
+            end
+        end
+        
+        
+        
+        if ts==1
+            if  ~isempty(f2) || ~isempty(f0) ||~isempty(fx)
+                j1=j;
+                while isempty(str2num(log_data{j1}(strfind(log_data{j1},'Y=')+2:strfind(log_data{j1},'Z')-1)))
+                    j1=j1-1;
+                end
+                
+                frame_num.control_num(i,18)=j1;
+                frame_num.control_num(i,9)=str2num(log_data{j1}(strfind(log_data{j1},'Y=')+2:strfind(log_data{j1},'Z')-1));
+                frame_num.control_num(i,12)=str2num(log_data{j1}(2:8));%timestamp at 2nd decision
+                for k=j1-12:1:j1+13
+                    f4=strfind(log_data{k},'causeevent timeframe');
+                    if ~isempty(f4)
+                        
+%                         frame_num.control_num(i,11)=find(line_indice_adj_timeframe==k); %timeframe closest to 2nd decision
+                        break
+                    end
+                end
+                ts=2;
+            end
+        end
+    end
+end
+
+
+for i=1:1:no_trials/2
+    
+    for j=line_indice_control(1,i):1:line_indice_control(2,i)+20
+        
+        f3=strfind(log_data{j},decision_navigate_string);
+        if ~isempty(f3)
+            frame_num.control_num(i,16)=str2num(log_data{j}(2:8));%timestamp at 3rd decision
+            frame_num.control_num(i,20)=j;
+            f4=strfind(log_data{j},'correct');
+            
+            for l=j:1:j+20
+                
+                f5=strfind(log_data{l},'choice');
+                if ~isempty(f5)
+                    frame_num.control_num(i,14)=str2num(log_data{l-1}(1,end-1:end)); %answer
+                    frame_num.control_num(i,15)=str2num(log_data{l}(1,end-1:end)); %choice
+                end
+            end
+            
+            %control period2 acc
+            switch frame_num.control_num(i,14)
+                case 3
+                    range1=16000;range2=16000;
+                case 6
+                    range1=32000;range2=32000;
+                case 9
+                    range1=49000;range2=49000;
+                case 12
+                    range1=1 ;range2=65536;
+                otherwise
+                    a=1;
+            end
+            
+            if ~isnan(frame_num.control_num(i,9))
+                if abs(frame_num.control_num(i,9)-range1)<=6000 | abs(frame_num.control_num(i,9)- range2)<=6000
+                    frame_num.control_num(i,10)=1;
+                else
+                    frame_num.control_num(i,10)=0;
+                end
+            end
+            
+            %control period 3 accuracy
+            switch frame_num.control_num(i,15)
+                case 3
+                    range1=16000;range2=16000;
+                case 6
+                    range1=32000;range2=32000;
+                case 9
+                    range1=49000;range2=49000;
+                case 12
+                    range1=1 ;range2=65536;
+                otherwise
+                    a=1;
+            end
+            
+            if ~isnan(frame_num.control_num(i,9))
+                if abs(frame_num.control_num(i,9)-range1)<=6000 | abs(frame_num.control_num(i,9)- range2)<=6000
+                    frame_num.control_num(i,13)=1;
+                else
+                    frame_num.control_num(i,13)=0;
+                end
+            end
+            
+        end
+        
+        
+    end
+end
+
+%adjust frame_num latencies for nan trials to 11.2s
+frame_num.adj_ocpr_num=frame_num.ocpr_num;
+frame_num.adj_ocpr_num(isnan(frame_num.adj_ocpr_num(:,8)),8)=frame_num.adj_ocpr_num(isnan(frame_num.adj_ocpr_num(:,8)),31);
+frame_num.adj_ocpr_num(frame_num.adj_ocpr_num(:,38)<0,38)=frame_num.adj_ocpr_num(frame_num.adj_ocpr_num(:,38)<0,38)+65536;
+frame_num.epoch2_trace=frame_num.adj_ocpr_num(find(frame_num.adj_ocpr_num(:,38)),38).*(360/65536);%epoch2 place choice in deg
+
+
+frame_num.adj_control_num=frame_num.control_num;
+frame_num.adj_control_num(isnan(frame_num.adj_control_num(:,8)),8)=frame_num.adj_control_num(isnan(frame_num.adj_control_num(:,8)),31);
+
+
+
+
+filename2=strcat([Root filename],'_ver3.mat');
+save(filename2)
+%%
 TimeStamp_MR=table;
 for i=1:numel(timestamp.adj_timeframe)
 TimeStamp_MR.time(i)=str2double(timestamp.adj_timeframe{i})';
