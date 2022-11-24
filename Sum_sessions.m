@@ -5,13 +5,14 @@ FileList = {'CL121121_1','CL121122_1','CL121128_1','CL121227_1','CL130107_1','CL
 Bad_perf = {'CL130107_1','CL130114_2','CL130121_2','CL130220_1','CL130227_1'};
 Good_perf = setdiff(FileList,Bad_perf);
 
+suf = 'B_ori';
 %%
 for fi = 1:numel(FileList)
     filename=FileList{fi};
     filefolder= 'Y:\EPhysRawData\fmri_oppa_analysis\';
 
-    Trial_exp = readtable([filefolder filename '\TrialInfo_EXP.xlsx' ]);
-    Trial_ctrl = readtable([filefolder filename '\TrialInfo_CTRL.xlsx' ]);
+    Trial_exp = readtable([filefolder filename '\TrialInfo_EXP_' suf '.xlsx' ]);
+    Trial_ctrl = readtable([filefolder filename '\TrialInfo_CTRL_' suf '.xlsx' ]);
     timestamp = readtable([filefolder filename '\Timestamp_MR.xlsx' ]);
 
     MRsig = load([filefolder filename '\MR_all.mat']);
@@ -67,8 +68,8 @@ for fi = 1:numel(FileList)
     SessionTable_temp=table;
 
     SessionTable_temp.ID = filename;
-    SessionTable_temp.AccP2 = nanmean(Trial_exp.correct_phase2);
-    SessionTable_temp.AccP3 = nanmean(Trial_exp.correct_phase3);
+    SessionTable_temp.AccP2 = sum(Trial_exp.correct_phase2==1)/40;
+    SessionTable_temp.AccP3 = sum(Trial_exp.correct_phase3==1)/40;
 
     %
     SessionTable_temp.lHPC_exp_all = nanmean(timestamp.L_HPC(timestamp.EXP_trials>0));
@@ -94,11 +95,11 @@ for fi = 1:numel(FileList)
     disp([filename ' is finished!'])
 end
 
-writetable(SessionTable,'D:\Human fMRI project\SessionTable.xlsx','writemode','overwrite')
+writetable(SessionTable,['D:\Human fMRI project\SessionTable_' suf '.xlsx'],'writemode','overwrite')
 
 %%
 
-SessionTable = readtable('D:\Human fMRI project\SessionTable.xlsx');
+SessionTable = readtable(['D:\Human fMRI project\SessionTable_' suf '.xlsx']);
 for fi=1:size(SessionTable,1)
     if ismember(SessionTable.ID(fi),Bad_perf)
         SessionTable.Perf(fi)=0;
@@ -144,8 +145,8 @@ ylabel('SMP accuracy')
 
 figure;
 temp=SessionTable;
-x=temp.AccP3; 
-y=(temp.lHPC_exp_P3 + temp.lHPC_exp_P3)/2;
+x=temp.AccP2; 
+y=(temp.lHPC_exp_correctP2 + temp.lHPC_exp_correctP2)/2;
 b1 = x\y;
 yCalc1 = b1*x;
 
@@ -163,9 +164,9 @@ corrcoef(x,y)
 text(min(x),max(y)*1.1,['r^2 = ' num2str(Rsq)])
 
 
-set(gca,'xlim',[0.5 1],'ylim',[450 800], 'fontsize',12,'fontweight','b')
-xlabel('SMP accuracy')
-ylabel('lHPC intensity (SMP)')
+set(gca,'xlim',[0 1],'ylim',[450 800], 'fontsize',12,'fontweight','b')
+xlabel('OPRP accuracy')
+ylabel('lHPC intensity (OPRP, correct trials only)')
 
 %%
 
@@ -198,7 +199,7 @@ xticklabels({'lHPC', 'rHPC'})
 ylabel('HPC intensity')
 legend({'Bad perf.','Good perf.'})
 
-ttest2(temp.lHPC_exp_P2,temp2.lHPC_exp_P2)
+[t,p] = ttest2(temp.rHPC_exp_P2,temp2.rHPC_exp_P2)
 
 %
 figure;
