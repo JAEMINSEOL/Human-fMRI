@@ -1,7 +1,28 @@
 %% 
-filename = filename(1:11);
-Root = ['Y:\EPhysRawData\fmri_oppa_analysis\' filename(1:end-1) '\'];
+% clearvars
+% global FileList fi
+% FileList = {'CL121121_1','CL121122_1','CL121128_1','CL121227_1','CL130107_1','CL130109_1','CL130114_2','CL130116_2',...
+%     'CL130121_2','CL130122_1','CL130130_1','CL130219_1','CL130220_1','CL130225_2','CL130226_1','CL130227_1'};
+% 
+% for fi = 4:numel(FileList)
+%     filename=FileList{fi};
+% 
+% Root = ['Y:\EPhysRawData\fmri_oppa_analysis\' filename '\'];
+% 
+% cd(Root )
+% fun = ['analyzeudklogB' filename(5:8) '_1_ver2'];
+% if ~exist(fun)
+% fun = ['analyzeudklogB' filename(5:8) '_2_ver2'];
+% end
+% 
+% if ~exist(fun)
+% fun = ['analyzeudklogB' filename(5:8) '_ver2'];
+% end
+% 
+% eval(fun)
 
+ filename = filename(1:10);
+Root = ['Y:\EPhysRawData\fmri_oppa_analysis\' filename '\'];
 %% add epoch specific info in frame_num matrix
 decision_object_string='1st decision';
 decision_place_string='2nd decision';
@@ -27,7 +48,7 @@ for i=1:1:no_trials/2
         fy=strfind(log_data{j},decision_timeout2);
         
         if ts~=1
-            if ~isempty(f1) || ~isempty(fy)
+            if ~isempty(f1) 
                 j1=j;
                 while isempty(str2num(log_data{j1}(strfind(log_data{j1},'Y=')+2:strfind(log_data{j1},'Z')-1)))
                     j1=j1-1;
@@ -49,7 +70,7 @@ for i=1:1:no_trials/2
         end
         
         if ts==1
-            if  ~isempty(f2) || ~isempty(f0) ||~isempty(fx)
+            if  ~isempty(f2) 
                 j1=j;
                 while isempty(str2num(log_data{j1}(strfind(log_data{j1},'Y=')+2:strfind(log_data{j1},'Z')-1)))
                     j1=j1-1;
@@ -172,7 +193,7 @@ for i=1:1:no_trials/2
         
         
         if ts~=1
-            if ~isempty(f1) || ~isempty(fy)
+            if ~isempty(f1) 
                 j1=j;
                 while isempty(str2num(log_data{j1}(strfind(log_data{j1},'Y=')+2:strfind(log_data{j1},'Z')-1)))
                     j1=j1-1;
@@ -196,7 +217,7 @@ for i=1:1:no_trials/2
         
         
         if ts==1
-            if  ~isempty(f2) || ~isempty(f0) ||~isempty(fx)
+            if  ~isempty(f2) 
                 j1=j;
                 while isempty(str2num(log_data{j1}(strfind(log_data{j1},'Y=')+2:strfind(log_data{j1},'Z')-1)))
                     j1=j1-1;
@@ -288,6 +309,9 @@ for i=1:1:no_trials/2
         
     end
 end
+%
+frame_num.ocpr_num(isnan(frame_num.ocpr_num(:,7)),9:13)=nan;
+frame_num.control_num(isnan(frame_num.control_num(:,7)),9:13)=nan;
 
 %adjust frame_num latencies for nan trials to 11.2s
 frame_num.adj_ocpr_num=frame_num.ocpr_num;
@@ -302,7 +326,7 @@ frame_num.adj_control_num(isnan(frame_num.adj_control_num(:,8)),8)=frame_num.adj
 
 
 
-filename2=strcat([Root filename],'_ver3.mat');
+filename2=strcat([Root filename 'B'],'_ver3.mat');
 save(filename2)
 %%
 TimeStamp_MR=table;
@@ -379,6 +403,8 @@ TrialInfo_CTRL.phase3_start=frame_num.adj_control_num(:,32);
 TrialInfo_CTRL.phase3_end=frame_num.adj_control_num(:,16);
 
 %
-writetable(TrialInfo_EXP, [Root 'TrialInfo_EXP.xlsx'],'writemode','overwrite')
-writetable(TrialInfo_CTRL, [Root 'TrialInfo_CTRL.xlsx'],'writemode','overwrite')
-writetable(TimeStamp_MR, [Root 'TimeStamp_MR.xlsx'],'writemode','overwrite')
+writetable(TrialInfo_EXP, [Root 'TrialInfo_EXP_B_ori.xlsx'],'writemode','overwrite')
+writetable(TrialInfo_CTRL, [Root 'TrialInfo_CTRL_B_ori.xlsx'],'writemode','overwrite')
+% writetable(TimeStamp_MR, [Root 'TimeStamp_MR.xlsx'],'writemode','overwrite')
+disp([filename 'is finished!'])
+% end
