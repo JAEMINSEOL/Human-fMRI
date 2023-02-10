@@ -120,12 +120,15 @@ temp.correctness(find(isnan(temp.correct_answer)))=nan;
 temp.RT = temp.response - temp.start;
 
 
-r = find(runs.start<temp.start(1),1,'last');
+r = find(runs.start<min(temp.start),1,'last');
+if ~isnan(r)
     temp.run(1:6)=r;
 temp.start = temp.start-runs.start(r);
 temp.response = temp.response-runs.start(r);
 temp.end = temp.end-runs.start(r);
-
+else
+    temp=[];
+end
 
 trial_info = [trial_info;temp];
 end
